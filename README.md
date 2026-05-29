@@ -1,65 +1,85 @@
 # Algorithmic Strategy Backtester
 
-> A from-scratch backtesting engine for quantitative trading strategies — built to evaluate signal quality with institutional-grade rigor and transaction cost realism.
+> A from-scratch backtesting engine for a 50/200-day SMA crossover strategy on EUR/USD — built for signal transparency, look-ahead bias prevention, and honest performance analysis.
 
 ---
 
 ## Overview
 
-This project implements a complete backtesting framework for a **50/200-day SMA crossover strategy** applied to the EUR/USD forex pair (2020–2026). Rather than relying on off-the-shelf backtesting libraries for core logic, the signal generation, return computation, and performance reporting are implemented directly in Pandas and NumPy to keep the methodology transparent and auditable.
+This project implements a complete backtesting pipeline applied to the **EUR/USD forex pair (2020–2026)**. Signal generation, return computation, transaction cost modeling, and performance reporting are all built directly in Pandas and NumPy — no black-box backtesting abstraction — so every calculation is visible and auditable.
 
-The notebook walks through every decision — from data acquisition to look-ahead bias prevention to transaction cost friction — with inline commentary explaining *why* each step is done the way it is, not just *how*.
+The notebook doesn't stop at the numbers. Each metric is interpreted against real institutional benchmarks, and the conclusion honestly diagnoses *why* the strategy behaved the way it did given the market environment it was tested in.
 
 ---
 
 ## Strategy Logic
 
-**Signal:** Long when the 50-day SMA is above the 200-day SMA; flat (no position) otherwise. A classic trend-following signal.
+**Signal:** Long when SMA50 > SMA200 (golden cross); flat otherwise. A classic trend-following signal that bets on sustained directional momentum.
 
-**Entry/Exit:**
-- Enter long when SMA50 crosses above SMA200 (golden cross)
-- Exit when SMA50 crosses back below SMA200 (death cross)
-
-**Look-ahead bias prevention:** All position columns are `.shift(1)`-ed before multiplying against daily returns. This ensures only yesterday's signal is used to determine today's position — a critical correctness requirement that most naive implementations get wrong.
-
----
-
-## Performance Metrics
-
-The notebook computes the following at the end of the backtest period:
-
-| Metric | Description |
+| Condition | Action |
 |---|---|
-| **Total Return** | Compounded log return over the full period |
-| **Sharpe Ratio** | Annualized, benchmarked against the ECB Euro Short-Term Rate (€STR) |
-| **Maximum Drawdown** | Peak-to-trough decline in the equity curve |
-| **Win Rate** | Percentage of closed trades with positive return |
-| **Number of Trades** | Total trade windows opened over the backtest period |
+| SMA50 crosses above SMA200 | Enter long |
+| SMA50 crosses back below SMA200 | Exit to flat |
 
-Returns are computed as **log returns** throughout (`np.log(close / close.shift(1))`), then exponentiated for final equity curve values. This ensures mathematically consistent compounding across the full period.
+**Look-ahead bias prevention:** Position columns are `.shift(1)`-ed before multiplying against daily returns, ensuring only yesterday's signal determines today's trade — a correctness requirement most naive implementations skip.
 
----
-
-## Transaction Costs
-
-A flat **0.1% cost per trade** (entry + exit) is subtracted from strategy returns on days where position changes occur. This simulates realistic spread/commission friction and prevents the backtest from overstating edge on a high-turnover signal.
+**Transaction costs:** A flat 0.1% cost is subtracted from strategy returns on every day a position change occurs (entry or exit), simulating realistic spread/commission friction.
 
 ---
 
-## Visualizations
+## Results
 
-- **Equity Curve Comparison** — Strategy cumulative return vs. buy-and-hold benchmark, plotted as growth of $1 over the full period
+Backtest period: **January 2020 – December 2025** | Asset: **EUR/USD**
+
+| Metric | Strategy | Benchmark (Buy-and-Hold) |
+|---|---|---|
+| Total Return | -7.357% | -4.477% |
+| Sharpe Ratio | -0.596 | — |
+| Maximum Drawdown | -23.744% | — |
+| Win Rate | 33.33% (2/6 trades) | — |
+
+---
+
+## Metric Interpretations
+
+### Total Return: -7.357%
+The strategy underperforms simple buy-and-hold by **2.88%**. It not only failed to protect against EUR/USD's overall decline — it amplified losses through mistimed entries and transaction costs.
+
+### Sharpe Ratio: -0.596
+A negative Sharpe Ratio means the strategy generated returns *worse* than the ECB Euro Short-Term Rate (€STR) of 1.933% per year. The risk assumed produced no compensating reward. An investor would have been better off in a risk-free instrument.
+
+### Maximum Drawdown: -23.744%
+The equity curve fell 23.744% from its peak before recovering. On a $1,000 starting portfolio, the balance drops to $762.56 — and recovering to breakeven requires a ~31.1% gain, not just 23.744%. Most institutional desks impose a 10–20% MDD hard stop; **this strategy would have been shut down in a professional setting.**
+
+### Win Rate: 33.33%
+2 profitable trades out of 6. Importantly, 6 trades is statistically meaningless — a minimum of ~30 trades is required before any win rate can be attributed to the strategy itself rather than variance. No reliable conclusions can be drawn from this sample.
+
+---
+
+## Conclusion
+
+The 50/200 SMA crossover is a **trend-following strategy** — it only works in markets with clear, sustained directional movement. EUR/USD from 2020 to 2026 was choppy and range-bound, with no persistent uptrend. Every time the golden cross fired a long signal, price reversed shortly after, generating **whipsaw losses** rather than trend-riding profits.
+
+The strategy wasn't broken — it was applied to the wrong market regime. Testing it on a genuinely trending asset would likely produce very different results.
+
+---
+
+## Methodology Notes
+
+**Why log returns?**
+Log returns are time-additive and compound correctly over multi-year periods. Simple returns do not. All return math uses `np.log(P_t / P_{t-1})`, with final equity values recovered via `np.exp(cumsum)`.
+
+**Why `.shift(1)` on position?**
+Without the shift, today's signal would trade today — impossible in live execution and a common source of look-ahead bias that silently inflates backtest results. The shift enforces a one-day lag between signal and trade.
+
+**Why the ECB €STR as risk-free rate?**
+EUR/USD is a euro-denominated long position. The Euro Short-Term Rate is the correct risk-free benchmark for eurozone instruments, analogous to using the Fed Funds rate for USD strategies.
 
 ---
 
 ## Stack
 
-- `Python`
-- `yfinance` — historical OHLCV data
-- `Pandas` — signal generation, position management, return computation
-- `NumPy` — log return math, equity curve construction
-- `Matplotlib` — equity curve visualization
-- `Backtrader` — (imported; available for extension)
+`Python` `yfinance` `Pandas` `NumPy` `Matplotlib` `Backtrader`
 
 ---
 
@@ -75,19 +95,10 @@ algorithmic-strategy-backtester/
 
 ## How to Run
 
-**1. Clone the repo**
 ```bash
 git clone https://github.com/bckenz-ai/algorithmic-strategy-backtester.git
 cd algorithmic-strategy-backtester
-```
-
-**2. Install dependencies**
-```bash
 pip install yfinance pandas numpy matplotlib backtrader
-```
-
-**3. Open the notebook**
-```bash
 jupyter notebook Algorithmic_Strategy_Backtester.ipynb
 ```
 
@@ -95,19 +106,13 @@ Run all cells top-to-bottom. Data is pulled live from Yahoo Finance on execution
 
 ---
 
-## Key Design Decisions
+## References
 
-**Why log returns?**
-Log returns are time-additive and produce accurate compounding over multi-year periods. Simple returns compound incorrectly when summed. All return math in this project uses `np.log(P_t / P_{t-1})`.
+European Central Bank. (2021, April 7). *Euro short-term rate (€STR)*. https://www.ecb.europa.eu/stats/financial_markets_and_interest_rates/euro_short-term_rate/html/index.en.html
 
-**Why `.shift(1)` on the position column?**
-Without the shift, today's signal would be used to trade today — an impossible feat in live trading that inflates backtest performance. The shift ensures the signal is always one day stale relative to the trade it generates.
+TradeZella. (2026, April 14). *Drawdown Management: How to Survive and Recover from Trading Drawdowns*. https://www.tradezella.com/blog/drawdown-management
 
-**Why the ECB €STR as the risk-free rate?**
-EUR/USD is a euro-denominated strategy from the long side. The Euro Short-Term Rate is the appropriate risk-free benchmark for eurozone instruments, analogous to using the Fed Funds rate for USD strategies.
-
-**Why flat transaction costs instead of a spread model?**
-Simplicity and reproducibility. A 0.1% flat cost is a conservative but tractable approximation for retail forex execution costs. It's easy to adjust and reason about without requiring a live broker connection.
+Yahoo Finance. (2025). *Yahoo Finance – Business Finance, Stock Market, Quotes, News*. https://finance.yahoo.com/
 
 ---
 
