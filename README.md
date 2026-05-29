@@ -1,14 +1,14 @@
 # Algorithmic Strategy Backtester
 
-> A from-scratch backtesting engine for a 50/200-day SMA crossover strategy on EUR/USD — built for signal transparency, look-ahead bias prevention, and honest performance analysis.
+> A from-scratch backtesting engine for a 50/200-day SMA crossover strategy on EUR/USD. Built for signal transparency, look-ahead bias prevention, and honest performance analysis.
 
 ---
 
 ## Overview
 
-This project implements a complete backtesting pipeline applied to the **EUR/USD forex pair (2020–2026)**. Signal generation, return computation, transaction cost modeling, and performance reporting are all built directly in Pandas and NumPy — no black-box backtesting abstraction — so every calculation is visible and auditable.
+This project implements a complete backtesting pipeline applied to the **EUR/USD forex pair (2020–2026)**. Signal generation, return computation, transaction cost modeling, and performance reporting are all built directly in Pandas and NumPy.
 
-The notebook doesn't stop at the numbers. Each metric is interpreted against real institutional benchmarks, and the conclusion honestly diagnoses *why* the strategy behaved the way it did given the market environment it was tested in.
+Each metric is interpreted against real institutional benchmarks, and there's an honest conclusion as to *why* the strategy behaved the way it did given the market environment it was tested in.
 
 ---
 
