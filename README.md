@@ -1,5 +1,5 @@
 # Algorithmic Strategy Backtester
-
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bckenz-ai/algorithmic-strategy-backtester/blob/main/Algorithmic_Strategy_Backtester.ipynb)
 > A from-scratch backtesting engine for a 50/200-day SMA crossover strategy on EUR/USD. Built for signal transparency, look-ahead bias prevention, and honest performance analysis.
 
 ---
